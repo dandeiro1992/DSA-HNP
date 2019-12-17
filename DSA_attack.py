@@ -35,7 +35,7 @@ def mygma_keys(path, p, q, g):
 
 def random_string(string_length=10):
     letters = string.ascii_lowercase
-    numbers=string.digits
+    numbers = string.digits
     return ''.join(random.choice(numbers) for i in range(string_length))
 
 
@@ -97,7 +97,7 @@ def verify(p, q, g, r, s, message, y):
 def results_in_file(path, p, q, g, x, message_length, number_of_signatures):
     with open(path, 'w') as file:
         for i in range(number_of_signatures):
-            message = random_string(math.floor(math.log(2**message_length,10)))
+            message = random_string(math.floor(math.log(2 ** message_length, 10)))
             file.write(str(i) + " ")
             file.write(message + " ")
             r, s, k = sign(p, q, g, message, x)
@@ -116,7 +116,6 @@ def attack(path_results, dimension, number_of_bits, q):
             # print("s_prim: {}".format(s_prim))
             rs_prim = (int(tmp[2]) * s_prim) % q
             # print("rs_prim: {}".format(rs_prim))
-            t.append((rs_prim // (2 ** number_of_bits)) % q)
             # t.append(rs_prim)
             # print("result: {}".format(((rs_prim // (2 ** l)) % q)))
             a = int(tmp[4]) & mask
@@ -129,7 +128,11 @@ def attack(path_results, dimension, number_of_bits, q):
             # print("hs: {}".format(str(hs)))
             u_prim = (a - hs) % q
             # print("u_prim: {}".format(str(u_prim)))
-            u.append((u_prim // (2 ** number_of_bits)) % q)
+            tmp_t = ((rs_prim * (pow((pow(2, q - 2, q)), number_of_bits, q))) % q)
+            tmp_u = ((u_prim * (pow((pow(2, q - 2, q)), number_of_bits, q))) % q)
+            if tmp_t != 0 and tmp_u != 0:
+                t.append(tmp_t)
+                u.append(tmp_u)
             # u.append(u_prim)
             # print("u: {}".format(str(((u_prim // (2 ** l)) % q))))
         file.close()
@@ -154,7 +157,8 @@ def create_basis(t, dimension, number_of_bits, q):
         print(new_basic[i])
     return new_basic
 
-def create_basis_2(t, u,  dimension, number_of_bits, q):
+
+def create_basis_2(t, u, dimension, number_of_bits, q):
     new_basic = []
     for i in range(dimension + 2):
         tmp = []
@@ -166,20 +170,76 @@ def create_basis_2(t, u,  dimension, number_of_bits, q):
         if i == dimension:
             tmp.append(1)
         else:
-            if i != dimension+1:
+            if i != dimension + 1:
                 tmp.append((2 ** (number_of_bits + 1)) * t[i])
             else:
                 tmp.append(0)
 
-        if i == dimension+1:
+        if i == dimension + 1:
             tmp.append(q)
         else:
-            tmp.append((2 ** (number_of_bits + 1)) * u[i])
+            tmp.append((2 ** (number_of_bits + 1)) * (u[i]))
 
         new_basic.append(tmp)
     for i in range(dimension + 2):
         print(new_basic[i])
     return new_basic
+
+
+def create_basis_3(t, u, dimension, number_of_bits, q):
+    new_basic = []
+    for i in range(dimension + 2):
+        tmp = []
+        for j in range(dimension):
+            if i == j:
+                tmp.append(q)
+            else:
+                tmp.append(0)
+        if i == dimension:
+            tmp.append(pow(pow(2, q - 2, q), number_of_bits + 1, q))
+        else:
+            if i != dimension + 1:
+                tmp.append(t[i])
+            else:
+                tmp.append(0)
+
+        if i == dimension + 1:
+            tmp.append(q)
+        else:
+            tmp.append(u[i])
+
+        new_basic.append(tmp)
+    for i in range(dimension + 2):
+        print(new_basic[i])
+    return new_basic
+
+
+def create_basis_4(t, u, dimension, number_of_bits, q):
+    new_basic = []
+    for i in range(dimension):
+        tmp = []
+        for j in range(dimension + 2):
+            if i == j:
+                tmp.append(q)
+            else:
+                tmp.append(0)
+        new_basic.append(tmp)
+    tmp=[]
+    for i in range(dimension):
+        tmp.append(t[i])
+    tmp.append(pow(pow(2, q - 2, q), number_of_bits + 1, q))
+    tmp.append(0)
+    new_basic.append(tmp)
+    tmp=[]
+    for i in range(dimension):
+        tmp.append(u[i])
+    tmp.append(0)
+    tmp.append(q)
+    new_basic.append(tmp)
+    for i in range(dimension + 2):
+        print(new_basic[i])
+    return new_basic
+
 
 def get_new_basic_lll(basic):
     reduced_basis = olll.reduction(basic, 0.75)
