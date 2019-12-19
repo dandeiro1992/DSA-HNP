@@ -1,0 +1,13 @@
+N=random_prime(2^150)*random_prime(2^150)
+message=Integer('thepasswordfortodayisswordfish',base=35)
+c=message^3%N
+print(c)
+a=Integer('thepasswordfortodayisswordfis0',base=35)
+X=Integer('x',base=35)
+M=matrix([[X^3,3*X^2*a,3*X*a^2,a^3-c],[0,N*X^2,0,0],[0,0,N*X,0],[0,0,0,N]])
+# print(M)
+B=M.LLL()
+# print(B)
+Q=(B[0][0])*x^3/X^3+(B[0][1])*x^2/X^2+(B[0][2])*x/X+(B[0][3])
+print(Q)
+print(Q.roots(ring=ZZ))
