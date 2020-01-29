@@ -12,7 +12,7 @@ def parameters(p_length, q_length):
     while True:
         counter = 0
         q = sympy.randprime(2 ** (q_length - 1), 2 ** q_length - 1)
-        while (True):
+        while True:
             a = int((2 ** (p_length - 1)) / q)
             b = int((2 ** p_length - 1) / q)
             k = sympy.randprime(a, b) + 1
@@ -66,7 +66,7 @@ def sign(p, q, g, message, x):
     while True:
         k = random.randint(1, q - 1)
         if k.bit_length() == q.bit_length():
-            break;
+            break
     # print("k: {}".format(k))
     r = (pow(g, k, p)) % q
     u = SHA.new(message.encode("utf-8")).hexdigest()
@@ -101,7 +101,8 @@ def results_in_file(path, p, q, g, x, message_length, number_of_signatures):
             file.write(str(i) + " ")
             file.write(message + " ")
             r, s, k = sign(p, q, g, message, x)
-            file.write(str(r) + " " + str(s) + " " + str(k) + "\n")
+            if r != 0 and s != 0:
+                file.write(str(r) + " " + str(s) + " " + str(k) + "\n")
         file.close()
 
 
@@ -120,9 +121,9 @@ def attack(path_results, dimension, number_of_bits, q):
             # print("result: {}".format(((rs_prim // (2 ** l)) % q)))
             a = int(tmp[4]) & mask
             # print("a: {}".format(str(a)))
-            # hash = SHA.new(tmp[1].encode("utf-8")).hexdigest()
-            # h_m = int(hash, 16)
-            h_m = int(tmp[1], 16)
+            hash = SHA.new(tmp[1].encode("utf-8")).hexdigest()
+            h_m = int(hash, 16)
+            # h_m = int(tmp[1], 16)
             # print("h_m: {}".format(str(h_m)))
             hs = h_m * s_prim % q
             # print("hs: {}".format(str(hs)))
@@ -139,108 +140,68 @@ def attack(path_results, dimension, number_of_bits, q):
     return t, u
 
 
-def create_basis(t, dimension, number_of_bits, q):
-    new_basic = []
-    for i in range(dimension + 1):
-        tmp = []
-        for j in range(dimension):
-            if i == j:
-                tmp.append((2 ** (number_of_bits + 1) * q))
-            else:
-                tmp.append(0)
-        if i == dimension:
-            tmp.append(1)
-        else:
-            tmp.append((2 ** (number_of_bits + 1)) * t[i])
-        new_basic.append(tmp)
-    for i in range(dimension + 1):
-        print(new_basic[i])
-    return new_basic
-
-
-def create_basis_2(t, u, dimension, number_of_bits, q):
-    new_basic = []
-    for i in range(dimension + 2):
-        tmp = []
-        for j in range(dimension):
-            if i == j:
-                tmp.append((2 ** (number_of_bits + 1) * q))
-            else:
-                tmp.append(0)
-        if i == dimension:
-            tmp.append(1)
-        else:
-            if i != dimension + 1:
-                tmp.append((2 ** (number_of_bits + 1)) * t[i])
-            else:
-                tmp.append(0)
-
-        if i == dimension + 1:
-            tmp.append(q)
-        else:
-            tmp.append((2 ** (number_of_bits + 1)) * (u[i]))
-
-        new_basic.append(tmp)
-    for i in range(dimension + 2):
-        print(new_basic[i])
-    return new_basic
-
-
-def create_basis_3(t, u, dimension, number_of_bits, q):
-    new_basic = []
-    for i in range(dimension + 2):
-        tmp = []
-        for j in range(dimension):
-            if i == j:
-                tmp.append(q)
-            else:
-                tmp.append(0)
-        if i == dimension:
-            tmp.append(pow(pow(2, q - 2, q), number_of_bits + 1, q))
-        else:
-            if i != dimension + 1:
-                tmp.append(t[i])
-            else:
-                tmp.append(0)
-
-        if i == dimension + 1:
-            tmp.append(q)
-        else:
-            tmp.append(u[i])
-
-        new_basic.append(tmp)
-    for i in range(dimension + 2):
-        print(new_basic[i])
-    return new_basic
-
-
-def create_basis_4(t, u, dimension, number_of_bits, q):
+def create_basis(t, u, dimension, number_of_bits, q):
     new_basic = []
     for i in range(dimension):
         tmp = []
         for j in range(dimension + 2):
             if i == j:
-                tmp.append(q)
+                tmp.append(q * (2 ** (number_of_bits + 1)))
             else:
                 tmp.append(0)
         new_basic.append(tmp)
-    tmp=[]
+    tmp = []
     for i in range(dimension):
-        tmp.append(t[i])
-    tmp.append(pow(pow(2, q - 2, q), number_of_bits + 1, q))
+        tmp.append((2 ** (number_of_bits + 1)) * t[i])
+    tmp.append(1)
     tmp.append(0)
     new_basic.append(tmp)
-    tmp=[]
+    tmp = []
     for i in range(dimension):
-        tmp.append(u[i])
+        tmp.append((2 ** (number_of_bits + 1)) * u[i])
     tmp.append(0)
     tmp.append(q)
     new_basic.append(tmp)
-    for i in range(dimension + 2):
-        print(new_basic[i])
+    # for i in range(dimension + 2):
+    #     print(new_basic[i])
     return new_basic
 
 
 def get_new_basic_lll(basic):
+    print(basic)
+    print("-"*60)
     reduced_basis = olll.reduction(basic, 0.75)
+    print(reduced_basis)
     return reduced_basis
+
+
+def find_second(output):
+    sum = []
+    for i in output:
+        suma = 0
+        for k in i:
+            suma = suma + k * k
+        sum.append(suma)
+    index = list(range(0, len(sum)))
+    zipped = list(zip(sum, index))
+    # Printing zipped list
+    print("Initial zipped list - ", str(zipped))
+    # Using sorted and lambda
+    res = sorted(zipped, key=lambda x: x[0])
+
+    # printing result
+    # print("final list - ", str(res))
+    print("res:".format(res[1][1]))
+    return res[1][1]
+
+
+def get_secret_key(output, index, dimension, q):
+    key_1 = output[index][dimension]
+    key_2 = -(output[index][dimension] - q)
+    key_3 = -output[index][dimension]
+    key_4 = (output[index][dimension] + q)
+    print("Mozliwe klucze to:\n")
+    print("Klucz nr 1:\t {}\n".format(key_1))
+    print("Klucz nr 2:\t {}\n".format(key_2))
+    print("Klucz nr 3:\t {}\n".format(key_3))
+    print("Klucz nr 4:\t {}\n".format(key_4))
